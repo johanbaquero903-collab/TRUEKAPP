@@ -1,0 +1,6 @@
+{
+  "name": "TRUEKAPP",
+  "description": "Plataforma de trueque peer-to-peer para intercambiar productos y servicios sin dinero en Facatativá y Colombia.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
