@@ -443,6 +443,82 @@ class TruekappViewModel(private val repository: TruekappRepository) : ViewModel(
 
     // --- Reviews for Profile ---
     fun getReviewsForUser(userId: String) = repository.getReviewsForUser(userId)
+
+    // --- Authentication (Registro e inicio de sesión) ---
+    private val _isAuthDialogOpen = MutableStateFlow(false)
+    val isAuthDialogOpen: StateFlow<Boolean> = _isAuthDialogOpen.asStateFlow()
+
+    private val _authError = MutableStateFlow<String?>(null)
+    val authError: StateFlow<String?> = _authError.asStateFlow()
+
+    fun openAuthDialog() {
+        _authError.value = null
+        _isAuthDialogOpen.value = true
+    }
+
+    fun closeAuthDialog() {
+        _authError.value = null
+        _isAuthDialogOpen.value = false
+    }
+
+    fun login(identifier: String, pass: String) {
+        if (identifier.isBlank()) {
+            _authError.value = "Por favor ingresa tu correo o usuario"
+            return
+        }
+        viewModelScope.launch {
+            val result = repository.login(identifier, pass)
+            result.onSuccess { user ->
+                _currentUserId.value = user.id
+                _authError.value = null
+                _isAuthDialogOpen.value = false
+                showToast("¡Bienvenido, ${user.name}! Sesión iniciada.")
+            }.onFailure { err ->
+                _authError.value = err.message ?: "Error al iniciar sesión"
+            }
+        }
+    }
+
+    fun register(
+        name: String,
+        username: String,
+        email: String,
+        pass: String,
+        city: String,
+        neighborhood: String,
+        university: String,
+        avatarUrl: String
+    ) {
+        if (name.isBlank() || username.isBlank() || email.isBlank() || pass.isBlank()) {
+            _authError.value = "Todos los campos marcados deben completarse"
+            return
+        }
+        viewModelScope.launch {
+            val result = repository.register(
+                name = name,
+                username = username,
+                email = email,
+                password = pass,
+                city = city,
+                neighborhood = neighborhood,
+                university = university,
+                avatarUrl = avatarUrl
+            )
+            result.onSuccess { user ->
+                _currentUserId.value = user.id
+                _authError.value = null
+                _isAuthDialogOpen.value = false
+                showToast("¡Cuenta creada con éxito! Bienvenido a TRUEKAPP, ${user.name}.")
+            }.onFailure { err ->
+                _authError.value = err.message ?: "Error al crear la cuenta"
+            }
+        }
+    }
+
+    fun logout() {
+        showToast("Has cerrado sesión.")
+        openAuthDialog()
+    }
 }
 
 class TruekappViewModelFactory(private val repository: TruekappRepository) : ViewModelProvider.Factory {

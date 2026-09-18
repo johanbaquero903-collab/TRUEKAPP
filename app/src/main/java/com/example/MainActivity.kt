@@ -50,6 +50,7 @@ import com.example.data.repository.TruekappRepository
 import com.example.ui.components.TruekappBottomBar
 import com.example.ui.components.TruekappTopBar
 import com.example.ui.model.AppConstants
+import com.example.ui.screens.AuthDialog
 import com.example.ui.screens.ChatDialog
 import com.example.ui.screens.CounterOfferDialog
 import com.example.ui.screens.ExchangesScreen
@@ -110,6 +111,8 @@ fun TruekappApp(viewModel: TruekappViewModel) {
     val ratingExchange by viewModel.ratingExchange.collectAsStateWithLifecycle()
     val reportingUser by viewModel.reportingUser.collectAsStateWithLifecycle()
     val toastMessage by viewModel.toastMessage.collectAsStateWithLifecycle()
+    val isAuthDialogOpen by viewModel.isAuthDialogOpen.collectAsStateWithLifecycle()
+    val authError by viewModel.authError.collectAsStateWithLifecycle()
 
     // Local dialogs for TopBar shortcuts
     var isTopCityPickerOpen by remember { mutableStateOf(false) }
@@ -203,6 +206,7 @@ fun TruekappApp(viewModel: TruekappViewModel) {
                     favoriteListings = listings.filter { it.isFavorite },
                     reviewsFlow = viewModel.getReviewsForUser(currentUser?.id ?: "user_camilo"),
                     onSwitchUser = { viewModel.switchUser(it) },
+                    onOpenAuthDialog = { viewModel.openAuthDialog() },
                     onListingClick = { viewModel.openListingDetail(it) },
                     onProposeClick = { viewModel.startProposeTrueque(it) },
                     onToggleFavorite = { viewModel.toggleFavorite(it) },
@@ -338,6 +342,18 @@ fun TruekappApp(viewModel: TruekappViewModel) {
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(modifier = Modifier.height(8.dp))
+
+                    Button(
+                        onClick = {
+                            isTopUserSwitcherOpen = false
+                            viewModel.openAuthDialog()
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Iniciar Sesión / Nueva Cuenta")
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
                     allUsers.forEach { user ->
                         val isSelected = user.id == currentUser?.id
                         Surface(
@@ -392,6 +408,22 @@ fun TruekappApp(viewModel: TruekappViewModel) {
                 Button(onClick = { isTopUserSwitcherOpen = false }) {
                     Text("Cerrar")
                 }
+            }
+        )
+    }
+
+    // 8. Authentication Dialog (Registro e Inicio de Sesión)
+    if (isAuthDialogOpen) {
+        AuthDialog(
+            errorMessage = authError,
+            onLogin = { id, pass ->
+                viewModel.login(id, pass)
+            },
+            onRegister = { name, username, email, pass, city, neighborhood, university, avatarUrl ->
+                viewModel.register(name, username, email, pass, city, neighborhood, university, avatarUrl)
+            },
+            onDismiss = {
+                viewModel.closeAuthDialog()
             }
         )
     }

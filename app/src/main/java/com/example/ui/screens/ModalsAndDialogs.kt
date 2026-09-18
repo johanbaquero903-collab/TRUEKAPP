@@ -76,6 +76,7 @@ import com.example.data.model.ExchangeEntity
 import com.example.data.model.ListingEntity
 import com.example.data.model.UserEntity
 import com.example.ui.components.SmartListingImage
+import com.example.ui.components.TruekappOfficialLogo
 import com.example.ui.theme.TruekappPrimary
 import com.example.ui.theme.TruekappSecondary
 import java.text.SimpleDateFormat
@@ -812,4 +813,394 @@ fun ReportBlockDialog(
             }
         }
     )
+}
+
+// --- 6. Auth Dialog (Registro e Inicio de Sesión) ---
+@Composable
+fun AuthDialog(
+    errorMessage: String?,
+    onLogin: (identifier: String, pass: String) -> Unit,
+    onRegister: (
+        name: String,
+        username: String,
+        email: String,
+        pass: String,
+        city: String,
+        neighborhood: String,
+        university: String,
+        avatarUrl: String
+    ) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var isRegisterMode by remember { mutableStateOf(false) }
+
+    // Login fields
+    var loginIdentifier by remember { mutableStateOf("") }
+    var loginPassword by remember { mutableStateOf("") }
+
+    // Register fields
+    var regName by remember { mutableStateOf("") }
+    var regUsername by remember { mutableStateOf("") }
+    var regEmail by remember { mutableStateOf("") }
+    var regPassword by remember { mutableStateOf("") }
+    var regCity by remember { mutableStateOf("Facatativá") }
+    var regNeighborhood by remember { mutableStateOf("Centro") }
+    var regUniversity by remember { mutableStateOf("Universidad de Cundinamarca") }
+    var selectedAvatarIdx by remember { mutableStateOf(0) }
+
+    val sampleAvatars = listOf(
+        "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=200&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80"
+    )
+
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Card(
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            modifier = Modifier
+                .fillMaxWidth(0.92f)
+                .padding(vertical = 16.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+                    .padding(20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Header with Official Logo
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Spacer(modifier = Modifier.size(24.dp))
+                    TruekappOfficialLogo(size = 56.dp)
+                    IconButton(onClick = onDismiss) {
+                        Icon(Icons.Default.Close, contentDescription = "Cerrar")
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    text = "TRUEKAPP",
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontWeight = FontWeight.Black,
+                        letterSpacing = 1.sp
+                    ),
+                    color = TruekappPrimary
+                )
+
+                Text(
+                    text = "“Intercambia lo que tienes por lo que necesitas.”",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
+                        fontWeight = FontWeight.Medium
+                    ),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Tab Switcher: Iniciar Sesión vs Registrarse
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(modifier = Modifier.padding(4.dp)) {
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = if (!isRegisterMode) TruekappPrimary else Color.Transparent,
+                            modifier = Modifier
+                                .weight(1f)
+                                .clickable { isRegisterMode = false }
+                        ) {
+                            Text(
+                                text = "Iniciar Sesión",
+                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                color = if (!isRegisterMode) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier
+                                    .padding(vertical = 10.dp)
+                                    .align(Alignment.CenterVertically),
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                            )
+                        }
+
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = if (isRegisterMode) TruekappPrimary else Color.Transparent,
+                            modifier = Modifier
+                                .weight(1f)
+                                .clickable { isRegisterMode = true }
+                        ) {
+                            Text(
+                                text = "Crear Cuenta",
+                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                color = if (isRegisterMode) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier
+                                    .padding(vertical = 10.dp)
+                                    .align(Alignment.CenterVertically),
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                            )
+                        }
+                    }
+                }
+
+                if (!errorMessage.isNullOrBlank()) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = Color(0xFFFEE2E2),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = errorMessage,
+                            color = Color(0xFFDC2626),
+                            style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
+                            modifier = Modifier.padding(10.dp)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                if (!isRegisterMode) {
+                    // --- FORM: INICIAR SESIÓN ---
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = loginIdentifier,
+                            onValueChange = { loginIdentifier = it },
+                            label = { Text("Correo o @usuario") },
+                            placeholder = { Text("camilo.torres@ucundinamarca.edu.co") },
+                            singleLine = true,
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .testTag("login_identifier_input")
+                        )
+
+                        OutlinedTextField(
+                            value = loginPassword,
+                            onValueChange = { loginPassword = it },
+                            label = { Text("Contraseña") },
+                            placeholder = { Text("••••••") },
+                            singleLine = true,
+                            visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .testTag("login_password_input")
+                        )
+
+                        Button(
+                            onClick = { onLogin(loginIdentifier, loginPassword) },
+                            colors = ButtonDefaults.buttonColors(containerColor = TruekappPrimary),
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp)
+                                .testTag("submit_login_button")
+                        ) {
+                            Text("Entrar a TRUEKAPP", fontWeight = FontWeight.Bold)
+                        }
+
+                        Spacer(modifier = Modifier.height(6.dp))
+
+                        // Quick Demo Logins for instant review & testing
+                        Text(
+                            text = "Acceso rápido con perfiles de prueba:",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            listOf(
+                                "Camilo" to "camilo.torres@ucundinamarca.edu.co",
+                                "Valentina" to "valentina.gomez@gmail.com",
+                                "Andrea" to "andrea.morales@ucundinamarca.edu.co"
+                            ).forEach { (name, email) ->
+                                OutlinedButton(
+                                    onClick = {
+                                        loginIdentifier = email
+                                        loginPassword = "123456"
+                                        onLogin(email, "123456")
+                                    },
+                                    shape = RoundedCornerShape(8.dp),
+                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Text(name, fontSize = 11.sp, maxLines = 1)
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    // --- FORM: CREAR CUENTA ---
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = regName,
+                            onValueChange = { regName = it },
+                            label = { Text("Nombre y Apellido *") },
+                            placeholder = { Text("Ej: Laura Hernández") },
+                            singleLine = true,
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .testTag("register_name_input")
+                        )
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            OutlinedTextField(
+                                value = regUsername,
+                                onValueChange = { regUsername = it },
+                                label = { Text("@Usuario *") },
+                                placeholder = { Text("laura_h") },
+                                singleLine = true,
+                                shape = RoundedCornerShape(12.dp),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .testTag("register_username_input")
+                            )
+
+                            OutlinedTextField(
+                                value = regPassword,
+                                onValueChange = { regPassword = it },
+                                label = { Text("Contraseña *") },
+                                placeholder = { Text("Mínimo 6 caracteres") },
+                                singleLine = true,
+                                visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
+                                shape = RoundedCornerShape(12.dp),
+                                modifier = Modifier
+                                    .weight(1.1f)
+                                    .testTag("register_password_input")
+                            )
+                        }
+
+                        OutlinedTextField(
+                            value = regEmail,
+                            onValueChange = { regEmail = it },
+                            label = { Text("Correo electrónico *") },
+                            placeholder = { Text("laura@ucundinamarca.edu.co") },
+                            singleLine = true,
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .testTag("register_email_input")
+                        )
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            OutlinedTextField(
+                                value = regCity,
+                                onValueChange = { regCity = it },
+                                label = { Text("Ciudad") },
+                                singleLine = true,
+                                shape = RoundedCornerShape(12.dp),
+                                modifier = Modifier.weight(1f)
+                            )
+
+                            OutlinedTextField(
+                                value = regNeighborhood,
+                                onValueChange = { regNeighborhood = it },
+                                label = { Text("Barrio") },
+                                placeholder = { Text("Centro / Manablanca") },
+                                singleLine = true,
+                                shape = RoundedCornerShape(12.dp),
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+
+                        OutlinedTextField(
+                            value = regUniversity,
+                            onValueChange = { regUniversity = it },
+                            label = { Text("Universidad / Ocupación") },
+                            singleLine = true,
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        // Avatar Selection
+                        Text(
+                            text = "Foto de perfil:",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceEvenly
+                        ) {
+                            sampleAvatars.forEachIndexed { index, avatarUrl ->
+                                val isSelected = selectedAvatarIdx == index
+                                Box(
+                                    modifier = Modifier
+                                        .size(46.dp)
+                                        .clip(CircleShape)
+                                        .border(
+                                            width = if (isSelected) 3.dp else 1.dp,
+                                            color = if (isSelected) TruekappPrimary else Color.LightGray,
+                                            shape = CircleShape
+                                        )
+                                        .clickable { selectedAvatarIdx = index }
+                                ) {
+                                    coil.compose.AsyncImage(
+                                        model = avatarUrl,
+                                        contentDescription = "Avatar $index",
+                                        contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                                        modifier = Modifier.fillMaxSize()
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(4.dp))
+
+                        Button(
+                            onClick = {
+                                onRegister(
+                                    regName,
+                                    regUsername,
+                                    regEmail,
+                                    regPassword,
+                                    regCity,
+                                    regNeighborhood,
+                                    regUniversity,
+                                    sampleAvatars[selectedAvatarIdx]
+                                )
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = TruekappPrimary),
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp)
+                                .testTag("submit_register_button")
+                        ) {
+                            Text("Registrarme y Comenzar", fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            }
+        }
+    }
 }

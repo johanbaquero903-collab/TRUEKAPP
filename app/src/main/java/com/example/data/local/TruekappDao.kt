@@ -89,6 +89,9 @@ interface TruekappDao {
     @Query("SELECT * FROM users WHERE id = :userId LIMIT 1")
     suspend fun getUserById(userId: String): UserEntity?
 
+    @Query("SELECT * FROM users WHERE LOWER(email) = LOWER(:identifier) OR LOWER(username) = LOWER(:identifier) LIMIT 1")
+    suspend fun getUserByEmailOrUsername(identifier: String): UserEntity?
+
     @Query("SELECT * FROM users WHERE id = :userId LIMIT 1")
     fun getUserFlow(userId: String): Flow<UserEntity?>
 

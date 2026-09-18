@@ -17,6 +17,7 @@ data class UserEntity(
     val ratingCount: Int = 0,
     val university: String = "Universidad de Cundinamarca",
     val joinedDate: String = "Septiembre 2026",
+    val password: String = "123456",
     val isBlocked: Boolean = false
 )
 

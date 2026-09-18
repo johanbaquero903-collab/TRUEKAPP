@@ -78,6 +78,7 @@ fun ProfileScreen(
     favoriteListings: List<ListingEntity>,
     reviewsFlow: Flow<List<UserReviewEntity>>,
     onSwitchUser: (String) -> Unit,
+    onOpenAuthDialog: () -> Unit,
     onListingClick: (ListingEntity) -> Unit,
     onProposeClick: (ListingEntity) -> Unit,
     onToggleFavorite: (ListingEntity) -> Unit,
@@ -252,6 +253,26 @@ fun ProfileScreen(
 
                     Spacer(modifier = Modifier.height(12.dp))
 
+                    // Iniciar sesión / Registro button
+                    Button(
+                        onClick = onOpenAuthDialog,
+                        colors = ButtonDefaults.buttonColors(containerColor = TruekappPrimary),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("open_auth_dialog_button")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Iniciar Sesión / Crear Cuenta", fontWeight = FontWeight.Bold)
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
                     // Multi-User Switcher Button (Demo & testing peer-to-peer exchanges)
                     OutlinedButton(
                         onClick = { isSwitchUserDialogOpen = true },
@@ -266,7 +287,7 @@ fun ProfileScreen(
                             modifier = Modifier.size(16.dp)
                         )
                         Spacer(modifier = Modifier.width(6.dp))
-                        Text("Cambiar perfil (Modo prueba P2P)")
+                        Text("Cambiar perfil rápido (Modo prueba P2P)")
                     }
                 }
             }

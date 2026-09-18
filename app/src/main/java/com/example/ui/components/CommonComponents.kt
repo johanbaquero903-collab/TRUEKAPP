@@ -101,24 +101,7 @@ fun TruekappTopBar(
             // Brand Logo & Slogan
             Column {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .size(34.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(
-                                Brush.linearGradient(
-                                    listOf(TruekappPrimary, TruekappSecondary)
-                                )
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.SwapHoriz,
-                            contentDescription = "TRUEKAPP",
-                            tint = Color.White,
-                            modifier = Modifier.size(22.dp)
-                        )
-                    }
+                    TruekappOfficialLogo(size = 38.dp)
                     Spacer(modifier = Modifier.width(8.dp))
                     Column {
                         Text(
@@ -130,7 +113,7 @@ fun TruekappTopBar(
                             color = TruekappPrimary
                         )
                         Text(
-                            text = "Sin dinero, puro trueque",
+                            text = "Intercambia sin dinero",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

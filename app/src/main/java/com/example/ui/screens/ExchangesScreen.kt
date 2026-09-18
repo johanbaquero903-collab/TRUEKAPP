@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -32,6 +33,8 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -76,9 +79,31 @@ fun ExchangesScreen(
     modifier: Modifier = Modifier
 ) {
     var selectedTab by remember { mutableStateOf(0) } // 0: En curso, 1: Historial
+    var selectedStatusFilter by remember { mutableStateOf("ALL") }
+
+    val statusFilters = listOf(
+        "ALL" to "Todos",
+        "PROPOSED" to "Propuesta",
+        "NEGOTIATING" to "Negociación",
+        "ACCEPTED" to "Aceptado",
+        "COMPLETED" to "Completado",
+        "CANCELLED" to "Cancelado"
+    )
 
     val activeExchanges = exchanges.filter { it.status in listOf("PROPOSED", "NEGOTIATING", "ACCEPTED") }
     val historyExchanges = exchanges.filter { it.status in listOf("COMPLETED", "CANCELLED", "REJECTED") }
+
+    val displayedList = if (selectedStatusFilter != "ALL") {
+        exchanges.filter { 
+            if (selectedStatusFilter == "CANCELLED") {
+                it.status in listOf("CANCELLED", "REJECTED")
+            } else {
+                it.status == selectedStatusFilter 
+            }
+        }
+    } else {
+        if (selectedTab == 0) activeExchanges else historyExchanges
+    }
 
     Column(
         modifier = modifier
@@ -102,14 +127,17 @@ fun ExchangesScreen(
             )
         }
 
-        // Tabs: En curso vs Historial
+        // Tabs: En curso vs Historial (when ALL filter is selected)
         SecondaryTabRow(
             selectedTabIndex = selectedTab,
             containerColor = MaterialTheme.colorScheme.surface
         ) {
             Tab(
                 selected = selectedTab == 0,
-                onClick = { selectedTab = 0 },
+                onClick = { 
+                    selectedTab = 0 
+                    selectedStatusFilter = "ALL"
+                },
                 text = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text("En curso")
@@ -136,14 +164,39 @@ fun ExchangesScreen(
 
             Tab(
                 selected = selectedTab == 1,
-                onClick = { selectedTab = 1 },
+                onClick = { 
+                    selectedTab = 1 
+                    selectedStatusFilter = "ALL"
+                },
                 text = {
                     Text("Historial (${historyExchanges.size})")
                 }
             )
         }
 
-        val displayedList = if (selectedTab == 0) activeExchanges else historyExchanges
+        // Horizontal Status Chips Filter (Propuesta, Negociación, Aceptado, Completado, Cancelado)
+        LazyRow(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            items(statusFilters) { (statusKey, statusLabel) ->
+                val isSelected = selectedStatusFilter == statusKey
+                FilterChip(
+                    selected = isSelected,
+                    onClick = {
+                        selectedStatusFilter = statusKey
+                    },
+                    label = { Text(statusLabel, fontSize = 12.sp) },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = TruekappPrimary,
+                        selectedLabelColor = Color.White
+                    )
+                )
+            }
+        }
 
         if (displayedList.isEmpty()) {
             Box(

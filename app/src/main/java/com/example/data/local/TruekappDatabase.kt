@@ -20,7 +20,7 @@ import com.example.data.model.UserReviewEntity
         UserReviewEntity::class,
         ReportedUserEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class TruekappDatabase : RoomDatabase() {
