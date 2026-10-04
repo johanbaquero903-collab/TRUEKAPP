@@ -61,9 +61,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.example.data.model.ExchangeEntity
 import com.example.data.model.ListingEntity
 import com.example.data.model.UserEntity
 import com.example.data.model.UserReviewEntity
+import com.example.ui.components.ExchangeStatusBadge
 import com.example.ui.components.ListingCard
 import com.example.ui.theme.TruekappPrimary
 import com.example.ui.theme.TruekappSecondary
@@ -75,6 +77,7 @@ fun ProfileScreen(
     currentUser: UserEntity?,
     allUsers: List<UserEntity>,
     myListings: List<ListingEntity>,
+    myExchanges: List<ExchangeEntity>,
     favoriteListings: List<ListingEntity>,
     reviewsFlow: Flow<List<UserReviewEntity>>,
     onSwitchUser: (String) -> Unit,
@@ -83,9 +86,11 @@ fun ProfileScreen(
     onProposeClick: (ListingEntity) -> Unit,
     onToggleFavorite: (ListingEntity) -> Unit,
     onOpenReportDialog: (String) -> Unit,
+    onOpenExchangesTab: () -> Unit = {},
+    onPublishClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    var selectedProfileTab by remember { mutableStateOf(0) } // 0: Mis publicaciones, 1: Guardados, 2: Opiniones
+    var selectedProfileTab by remember { mutableStateOf(0) } // 0: Mis publicaciones, 1: Propuestas, 2: Guardados, 3: Opiniones
     var isSwitchUserDialogOpen by remember { mutableStateOf(false) }
 
     val reviews by reviewsFlow.collectAsState(initial = emptyList())
@@ -293,7 +298,7 @@ fun ProfileScreen(
             }
         }
 
-        // Sub-tabs: Mis Publicaciones | Guardados | Calificaciones
+        // Sub-tabs: Mis Publicaciones | Propuestas | Favoritos | Opiniones
         item {
             SecondaryTabRow(
                 selectedTabIndex = selectedProfileTab,
@@ -302,17 +307,22 @@ fun ProfileScreen(
                 Tab(
                     selected = selectedProfileTab == 0,
                     onClick = { selectedProfileTab = 0 },
-                    text = { Text("Mis Trueques (${myListings.size})") }
+                    text = { Text("Publicaciones (${myListings.size})", fontSize = 11.sp, maxLines = 1) }
                 )
                 Tab(
                     selected = selectedProfileTab == 1,
                     onClick = { selectedProfileTab = 1 },
-                    text = { Text("Favoritos (${favoriteListings.size})") }
+                    text = { Text("Propuestas (${myExchanges.size})", fontSize = 11.sp, maxLines = 1) }
                 )
                 Tab(
                     selected = selectedProfileTab == 2,
                     onClick = { selectedProfileTab = 2 },
-                    text = { Text("Opiniones (${reviews.size})") }
+                    text = { Text("Favoritos (${favoriteListings.size})", fontSize = 11.sp, maxLines = 1) }
+                )
+                Tab(
+                    selected = selectedProfileTab == 3,
+                    onClick = { selectedProfileTab = 3 },
+                    text = { Text("Opiniones (${reviews.size})", fontSize = 11.sp, maxLines = 1) }
                 )
             }
         }
@@ -325,7 +335,8 @@ fun ProfileScreen(
                     item {
                         EmptyProfileSection(
                             message = "Aún no has publicado productos o servicios para trueque.",
-                            buttonText = "Publicar ahora"
+                            buttonText = "Publicar ahora",
+                            onButtonClick = onPublishClick
                         )
                     }
                 } else {
@@ -334,7 +345,7 @@ fun ProfileScreen(
                             ListingCard(
                                 listing = item,
                                 onCardClick = { onListingClick(item) },
-                                onProposeClick = { onProposeClick(item) },
+                                onProposeClick = { onListingClick(item) },
                                 onToggleFavorite = { onToggleFavorite(item) }
                             )
                         }
@@ -343,12 +354,66 @@ fun ProfileScreen(
             }
 
             1 -> {
+                // My Exchanges / Proposals
+                if (myExchanges.isEmpty()) {
+                    item {
+                        EmptyProfileSection(
+                            message = "Aún no tienes propuestas ni intercambios registrados.",
+                            buttonText = "Ver intercambios",
+                            onButtonClick = onOpenExchangesTab
+                        )
+                    }
+                } else {
+                    items(myExchanges) { exch ->
+                        val isProposer = exch.proposerId == currentUser?.id
+                        val counterpart = if (isProposer) exch.targetOwnerName else exch.proposerName
+                        Box(modifier = Modifier.padding(horizontal = 16.dp)) {
+                            Card(
+                                onClick = onOpenExchangesTab,
+                                shape = RoundedCornerShape(14.dp),
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(14.dp),
+                                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = if (isProposer) "Propuesta enviada a $counterpart" else "Propuesta recibida de $counterpart",
+                                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                        ExchangeStatusBadge(status = exch.status)
+                                    }
+                                    Text(
+                                        text = "${exch.proposerListingTitle} ⇄ ${exch.targetListingTitle}",
+                                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
+                                    )
+                                    Text(
+                                        text = "Toca para gestionar propuesta o abrir el chat →",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = TruekappPrimary
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            2 -> {
                 // Saved / Favorites
                 if (favoriteListings.isEmpty()) {
                     item {
                         EmptyProfileSection(
                             message = "No tienes trueques guardados como favoritos.",
-                            buttonText = "Explorar trueques"
+                            buttonText = null
                         )
                     }
                 } else {
@@ -365,7 +430,7 @@ fun ProfileScreen(
                 }
             }
 
-            2 -> {
+            3 -> {
                 // Reviews Received
                 if (reviews.isEmpty()) {
                     item {
@@ -492,7 +557,8 @@ fun ProfileScreen(
 @Composable
 fun EmptyProfileSection(
     message: String,
-    buttonText: String?
+    buttonText: String?,
+    onButtonClick: () -> Unit = {}
 ) {
     Box(
         modifier = Modifier
@@ -506,6 +572,16 @@ fun EmptyProfileSection(
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+            if (!buttonText.isNullOrBlank()) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Button(
+                    onClick = onButtonClick,
+                    colors = ButtonDefaults.buttonColors(containerColor = TruekappPrimary),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text(buttonText)
+                }
+            }
         }
     }
 }

@@ -17,6 +17,9 @@ import kotlinx.coroutines.flow.Flow
 interface TruekappDao {
 
     // --- Listings ---
+    @Query("SELECT COUNT(*) FROM listings")
+    suspend fun getListingCount(): Int
+
     @Query("SELECT * FROM listings ORDER BY createdAt DESC")
     fun getAllListingsFlow(): Flow<List<ListingEntity>>
 
@@ -48,6 +51,9 @@ interface TruekappDao {
     suspend fun deleteListing(id: String)
 
     // --- Exchanges ---
+    @Query("SELECT COUNT(*) FROM exchanges")
+    suspend fun getExchangeCount(): Int
+
     @Query("SELECT * FROM exchanges ORDER BY updatedAt DESC")
     fun getAllExchangesFlow(): Flow<List<ExchangeEntity>>
 
@@ -86,6 +92,9 @@ interface TruekappDao {
     suspend fun insertChatMessages(messages: List<ChatMessageEntity>)
 
     // --- Users ---
+    @Query("SELECT COUNT(*) FROM users")
+    suspend fun getUserCount(): Int
+
     @Query("SELECT * FROM users WHERE id = :userId LIMIT 1")
     suspend fun getUserById(userId: String): UserEntity?
 

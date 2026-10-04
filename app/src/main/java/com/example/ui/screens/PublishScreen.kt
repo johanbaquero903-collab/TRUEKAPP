@@ -52,11 +52,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.ui.components.SmartListingImage
 import com.example.ui.model.AppConstants
 import com.example.ui.theme.TruekappPrimary
 import com.example.ui.theme.TruekappSecondary
@@ -71,7 +75,8 @@ fun PublishScreen(
         city: String,
         neighborhood: String,
         seeking: String,
-        isService: Boolean
+        isService: Boolean,
+        imageResName: String
     ) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -83,6 +88,22 @@ fun PublishScreen(
     var selectedCity by remember { mutableStateOf("Facatativá") }
     var selectedNeighborhood by remember { mutableStateOf("Centro") }
     var seekingExchangeFor by remember { mutableStateOf("") }
+    var selectedImage by remember { mutableStateOf("seed_item_tablet_1789702477589") }
+
+    val imageOptions = listOf(
+        "seed_item_tablet_1789702477589" to "Tecnología / Tablet",
+        "seed_item_bicicleta_1789702452748" to "Bicicleta / Deportes",
+        "seed_item_guitarra_1789702465235" to "Instrumento / Hobby",
+        "" to "Portada por categoría"
+    )
+
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        if (uri != null) {
+            selectedImage = uri.toString()
+        }
+    }
 
     var isCityDropdownOpen by remember { mutableStateOf(false) }
     var isSectorDropdownOpen by remember { mutableStateOf(false) }
@@ -403,41 +424,79 @@ fun PublishScreen(
             maxLines = 6
         )
 
-        // Photo Upload Mock / Indicator
+        // Photo Selector & Preview
         Surface(
             shape = RoundedCornerShape(14.dp),
             color = MaterialTheme.colorScheme.surfaceVariant,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Row(
+            Column(
                 modifier = Modifier.padding(14.dp),
-                verticalAlignment = Alignment.CenterVertically
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(TruekappPrimary.copy(alpha = 0.15f)),
-                    contentAlignment = Alignment.Center
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.AddPhotoAlternate,
-                        contentDescription = "Foto",
-                        tint = TruekappPrimary,
-                        modifier = Modifier.size(24.dp)
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                        Box(
+                            modifier = Modifier
+                                .size(56.dp)
+                                .clip(RoundedCornerShape(10.dp))
+                        ) {
+                            SmartListingImage(
+                                imageResName = selectedImage,
+                                category = selectedCategory,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column {
+                            Text(
+                                text = "Imagen del trueque",
+                                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
+                            )
+                            Text(
+                                text = "Elige una imagen de ejemplo o sube una de tu galería.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+
+                    OutlinedButton(
+                        onClick = {
+                            photoPickerLauncher.launch(
+                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                            )
+                        },
+                        shape = RoundedCornerShape(10.dp),
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.AddPhotoAlternate,
+                            contentDescription = "Galería",
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Galería", style = MaterialTheme.typography.labelSmall)
+                    }
                 }
-                Spacer(modifier = Modifier.width(12.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = "Fotos del artículo",
-                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
-                    )
-                    Text(
-                        text = "Foto optimizada asignada automáticamente según categoría para este MVP.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(imageOptions) { (resName, label) ->
+                        val isSelected = selectedImage == resName
+                        FilterChip(
+                            selected = isSelected,
+                            onClick = { selectedImage = resName },
+                            label = { Text(label, style = MaterialTheme.typography.labelSmall) },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = TruekappPrimary,
+                                selectedLabelColor = Color.White
+                            )
+                        )
+                    }
                 }
             }
         }
@@ -445,6 +504,7 @@ fun PublishScreen(
         // Submit Button
         Button(
             onClick = {
+                val canSubmit = title.isNotBlank() && description.isNotBlank() && seekingExchangeFor.isNotBlank()
                 onPublish(
                     title,
                     description,
@@ -453,8 +513,14 @@ fun PublishScreen(
                     selectedCity,
                     selectedNeighborhood,
                     seekingExchangeFor,
-                    isService
+                    isService,
+                    selectedImage
                 )
+                if (canSubmit) {
+                    title = ""
+                    description = ""
+                    seekingExchangeFor = ""
+                }
             },
             modifier = Modifier
                 .fillMaxWidth()

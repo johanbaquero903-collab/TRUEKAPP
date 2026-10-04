@@ -347,7 +347,9 @@ class TruekappRepository(private val dao: TruekappDao) {
             )
         )
 
-        dao.insertUsers(users)
+        if (dao.getUserCount() == 0) {
+            dao.insertUsers(users)
+        }
 
         val listings = listOf(
             // Camilo's own listings
@@ -542,10 +544,118 @@ class TruekappRepository(private val dao: TruekappDao) {
                 status = "AVAILABLE",
                 isFavorite = false,
                 isService = false
+            ),
+            // Additional realistic university fair demo listings
+            ListingEntity(
+                id = "list_demo_bici_celular",
+                ownerId = "user_sebas",
+                ownerName = "Sebastián Rincón",
+                ownerAvatar = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80",
+                ownerRating = 4.7f,
+                title = "Bicicleta Urbana / Montaña Rin 29 con Candado",
+                description = "Bicicleta en muy buen estado mecánico, llantas nuevas y frenos recién ajustados. Ideal para ir a la universidad.",
+                category = "Deportes",
+                condition = "Buen estado",
+                city = "Facatativá",
+                neighborhood = "Tisquesusa",
+                seekingExchangeFor = "Celular gama media liberado en buen estado",
+                imageResName = "seed_item_bicicleta_1789702452748",
+                createdAt = System.currentTimeMillis() - 3600000 * 5,
+                status = "AVAILABLE",
+                isFavorite = false,
+                isService = false
+            ),
+            ListingEntity(
+                id = "list_demo_libros_calc",
+                ownerId = "user_andrea",
+                ownerName = "Andrea Morales",
+                ownerAvatar = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+                ownerRating = 5.0f,
+                title = "Pack Libros Universitarios: Álgebra Lineal y Física I",
+                description = "Libros originales bien cuidados, sin páginas rayadas. Incluyen solucionarios impresos y guías de estudio.",
+                category = "Libros",
+                condition = "Como nuevo",
+                city = "Facatativá",
+                neighborhood = "Cartagenita",
+                seekingExchangeFor = "Calculadora científica Casio ClassWiz o graficadora",
+                imageResName = "libro_calculo",
+                createdAt = System.currentTimeMillis() - 3600000 * 8,
+                status = "AVAILABLE",
+                isFavorite = false,
+                isService = false
+            ),
+            ListingEntity(
+                id = "list_demo_diseno_clases",
+                ownerId = "user_valentina",
+                ownerName = "Valentina Gómez",
+                ownerAvatar = "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&auto=format&fit=crop&q=80",
+                ownerRating = 4.8f,
+                title = "Diseño Gráfico: Logo + Kit para Redes Sociales",
+                description = "Diseño de identidad visual básica para proyectos estudiantiles o emprendimientos (logo vectorial y 5 plantillas editables).",
+                category = "Servicios",
+                condition = "Nuevo",
+                city = "Facatativá",
+                neighborhood = "Manablanca",
+                seekingExchangeFor = "Clases particulares de inglés conversacional o programación",
+                imageResName = "seed_item_tablet_1789702477589",
+                createdAt = System.currentTimeMillis() - 3600000 * 12,
+                status = "AVAILABLE",
+                isFavorite = false,
+                isService = true
+            ),
+            ListingEntity(
+                id = "list_demo_ropa_accesorios",
+                ownerId = "user_andrea",
+                ownerName = "Andrea Morales",
+                ownerAvatar = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+                ownerRating = 5.0f,
+                title = "Combo Chaqueta Denim + Buzo Universitario Talla M",
+                description = "Prendas en excelente estado, limpias y sin desgaste. Ideales para el clima frío de la Sabana.",
+                category = "Ropa",
+                condition = "Buen estado",
+                city = "Facatativá",
+                neighborhood = "Centro",
+                seekingExchangeFor = "Accesorios: morral universitario, reloj deportivo o gorra",
+                imageResName = "chaqueta_termica",
+                createdAt = System.currentTimeMillis() - 3600000 * 16,
+                status = "AVAILABLE",
+                isFavorite = false,
+                isService = false
+            ),
+            ListingEntity(
+                id = "list_demo_juego_juego",
+                ownerId = "user_felipe",
+                ownerName = "Felipe Vargas",
+                ownerAvatar = "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80",
+                ownerRating = 4.9f,
+                title = "Videojuego Zelda: Breath of the Wild (Físico Switch)",
+                description = "Cartucho original con su caja en perfecto estado. Ya lo completé al 100% y busco otro título para cambiar.",
+                category = "Videojuegos",
+                condition = "Como nuevo",
+                city = "Facatativá",
+                neighborhood = "Santa Rita",
+                seekingExchangeFor = "Otro videojuego físico (Mario Kart 8, Smash Bros o Pokémon)",
+                imageResName = "switch_controller",
+                createdAt = System.currentTimeMillis() - 3600000 * 20,
+                status = "AVAILABLE",
+                isFavorite = false,
+                isService = false
             )
         )
 
-        dao.insertListings(listings)
+        if (dao.getListingCount() == 0) {
+            dao.insertListings(listings)
+        } else {
+            listings.forEach { demoListing ->
+                if (dao.getListingById(demoListing.id) == null) {
+                    dao.insertListing(demoListing)
+                }
+            }
+        }
+
+        if (dao.getExchangeCount() > 0) {
+            return
+        }
 
         // Seed realistic exchanges across the status stages:
         val exchanges = listOf(

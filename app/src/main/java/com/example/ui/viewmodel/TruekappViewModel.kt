@@ -99,7 +99,9 @@ class TruekappViewModel(private val repository: TruekappRepository) : ViewModel(
             val matchesQuery = query.isBlank() ||
                     item.title.contains(query, ignoreCase = true) ||
                     item.description.contains(query, ignoreCase = true) ||
-                    item.seekingExchangeFor.contains(query, ignoreCase = true)
+                    item.category.contains(query, ignoreCase = true) ||
+                    item.seekingExchangeFor.contains(query, ignoreCase = true) ||
+                    item.neighborhood.contains(query, ignoreCase = true)
             val matchesCategory = cat == "all" || item.category.equals(cat, ignoreCase = true)
             val matchesCity = city == "Todas" || item.city.equals(city, ignoreCase = true)
             val matchesCond = cond == null || item.condition.equals(cond, ignoreCase = true)
@@ -138,6 +140,9 @@ class TruekappViewModel(private val repository: TruekappRepository) : ViewModel(
     private val _pitchMessage = MutableStateFlow("")
     val pitchMessage: StateFlow<String> = _pitchMessage.asStateFlow()
 
+    private val _lastSubmittedProposal = MutableStateFlow<ExchangeEntity?>(null)
+    val lastSubmittedProposal: StateFlow<ExchangeEntity?> = _lastSubmittedProposal.asStateFlow()
+
     // Exchange negotiation details & chat
     private val _activeExchangeDetail = MutableStateFlow<ExchangeEntity?>(null)
     val activeExchangeDetail: StateFlow<ExchangeEntity?> = _activeExchangeDetail.asStateFlow()
@@ -161,7 +166,11 @@ class TruekappViewModel(private val repository: TruekappRepository) : ViewModel(
 
     init {
         viewModelScope.launch {
-            repository.seedInitialDataIfEmpty()
+            try {
+                repository.seedInitialDataIfEmpty()
+            } catch (_: Exception) {
+                // Handled gracefully if DB is initializing
+            }
         }
     }
 
@@ -222,9 +231,14 @@ class TruekappViewModel(private val repository: TruekappRepository) : ViewModel(
 
     fun startProposeTrueque(targetListing: ListingEntity) {
         _activeListingDetail.value = targetListing
-        _selectedOfferedListing.value = myListings.value.firstOrNull()
+        _selectedOfferedListing.value = myListings.value.firstOrNull { it.id != targetListing.id }
+            ?: myListings.value.firstOrNull()
         _pitchMessage.value = "¡Hola ${targetListing.ownerName}! Me interesa tu '${targetListing.title}'. ¿Te gustaría hacer este intercambio?"
         _isProposingTrueque.value = true
+    }
+
+    fun dismissProposalConfirmation() {
+        _lastSubmittedProposal.value = null
     }
 
     fun selectOfferedListing(listing: ListingEntity) {
@@ -246,15 +260,16 @@ class TruekappViewModel(private val repository: TruekappRepository) : ViewModel(
         }
 
         viewModelScope.launch {
-            repository.proposeExchange(
+            val newExchangeId = repository.proposeExchange(
                 targetListing = target,
                 proposer = user,
                 proposerListing = offered,
                 pitchMessage = _pitchMessage.value
             )
+            val createdExchange = repository.getExchangeById(newExchangeId)
             _isProposingTrueque.value = false
             _activeListingDetail.value = null
-            _currentTab.value = MainTab.INTERCAMBIOS
+            _lastSubmittedProposal.value = createdExchange
             showToast("¡Propuesta de trueque enviada a ${target.ownerName}!")
         }
     }
@@ -268,12 +283,22 @@ class TruekappViewModel(private val repository: TruekappRepository) : ViewModel(
         city: String,
         neighborhood: String,
         seeking: String,
-        isService: Boolean
+        isService: Boolean,
+        imageResName: String = ""
     ) {
         val user = currentUser.value ?: return
         if (title.isBlank() || description.isBlank() || seeking.isBlank()) {
             showToast("Por favor completa el título, descripción y lo que buscas a cambio.")
             return
+        }
+
+        val resolvedImage = when {
+            imageResName.isNotBlank() -> imageResName
+            isService -> "seed_item_tablet_1789702477589"
+            category.equals("Deportes", ignoreCase = true) -> "seed_item_bicicleta_1789702452748"
+            category.equals("Videojuegos", ignoreCase = true) -> "seed_item_guitarra_1789702465235"
+            category.equals("Tecnología", ignoreCase = true) -> "seed_item_tablet_1789702477589"
+            else -> "seed_item_bicicleta_1789702452748"
         }
 
         val newListing = ListingEntity(
@@ -289,7 +314,7 @@ class TruekappViewModel(private val repository: TruekappRepository) : ViewModel(
             city = city,
             neighborhood = neighborhood,
             seekingExchangeFor = seeking.trim(),
-            imageResName = if (isService) "servicio_clases" else "seed_item_bicicleta_1789702452748",
+            imageResName = resolvedImage,
             createdAt = System.currentTimeMillis(),
             status = "AVAILABLE",
             isFavorite = false,
@@ -298,6 +323,13 @@ class TruekappViewModel(private val repository: TruekappRepository) : ViewModel(
 
         viewModelScope.launch {
             repository.createListing(newListing)
+            _selectedCategory.value = "all"
+            _searchQuery.value = ""
+            _onlyFavorites.value = false
+            _selectedCondition.value = null
+            if (_selectedCity.value != "Todas" && !_selectedCity.value.equals(city, ignoreCase = true)) {
+                _selectedCity.value = city
+            }
             _currentTab.value = MainTab.INICIO
             showToast("¡Publicación creada exitosamente en TRUEKAPP!")
         }

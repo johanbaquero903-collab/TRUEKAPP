@@ -2,6 +2,7 @@ package com.example.ui.screens
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -186,7 +187,17 @@ fun HomeScreen(
                         style = MaterialTheme.typography.labelMedium.copy(
                             color = TruekappPrimary,
                             fontWeight = FontWeight.Bold
-                        )
+                        ),
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable {
+                                if (selectedCategory != "all") {
+                                    onCategorySelected("all")
+                                } else {
+                                    onExploreSearchClick()
+                                }
+                            }
+                            .padding(horizontal = 6.dp, vertical = 2.dp)
                     )
                 }
 

@@ -280,6 +280,18 @@ fun SearchScreen(
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
+                        Spacer(modifier = Modifier.height(14.dp))
+                        androidx.compose.material3.OutlinedButton(
+                            onClick = {
+                                onSearchQueryChange("")
+                                onCategorySelected("all")
+                                onConditionSelected(null)
+                                if (onlyFavorites) onToggleFavoritesOnly()
+                            },
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Text("Limpiar filtros")
+                        }
                     }
                 }
             }

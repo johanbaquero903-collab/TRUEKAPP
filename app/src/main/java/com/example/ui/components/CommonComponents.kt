@@ -311,7 +311,26 @@ fun SmartListingImage(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val resId = context.resources.getIdentifier(imageResName, "drawable", context.packageName)
+    val isRemoteOrUri = imageResName.startsWith("http://") ||
+            imageResName.startsWith("https://") ||
+            imageResName.startsWith("content://") ||
+            imageResName.startsWith("file://")
+
+    if (isRemoteOrUri) {
+        AsyncImage(
+            model = imageResName,
+            contentDescription = category,
+            contentScale = ContentScale.Crop,
+            modifier = modifier
+        )
+        return
+    }
+
+    val resId = if (imageResName.isNotBlank()) {
+        context.resources.getIdentifier(imageResName, "drawable", context.packageName)
+    } else {
+        0
+    }
 
     if (resId != 0) {
         Image(
@@ -336,7 +355,7 @@ fun SmartListingImage(
         Box(
             modifier = modifier.background(
                 Brush.linearGradient(
-                    listOf(categoryColor.copy(alpha = 0.8f), categoryColor.copy(alpha = 0.3f))
+                    listOf(categoryColor.copy(alpha = 0.85f), categoryColor.copy(alpha = 0.4f))
                 )
             ),
             contentAlignment = Alignment.Center

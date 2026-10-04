@@ -3,6 +3,7 @@ package com.example
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
@@ -57,6 +58,7 @@ import com.example.ui.screens.ExchangesScreen
 import com.example.ui.screens.HomeScreen
 import com.example.ui.screens.ListingDetailSheet
 import com.example.ui.screens.ProfileScreen
+import com.example.ui.screens.ProposalSentConfirmationDialog
 import com.example.ui.screens.PublishScreen
 import com.example.ui.screens.RatingDialog
 import com.example.ui.screens.ReportBlockDialog
@@ -105,6 +107,7 @@ fun TruekappApp(viewModel: TruekappViewModel) {
     val isProposingTrueque by viewModel.isProposingTrueque.collectAsStateWithLifecycle()
     val selectedOfferedListing by viewModel.selectedOfferedListing.collectAsStateWithLifecycle()
     val pitchMessage by viewModel.pitchMessage.collectAsStateWithLifecycle()
+    val lastSubmittedProposal by viewModel.lastSubmittedProposal.collectAsStateWithLifecycle()
 
     val activeChatExchange by viewModel.activeChatExchange.collectAsStateWithLifecycle()
     val chatMessages by viewModel.chatMessages.collectAsStateWithLifecycle()
@@ -124,6 +127,10 @@ fun TruekappApp(viewModel: TruekappViewModel) {
             Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
             viewModel.clearToast()
         }
+    }
+
+    BackHandler(enabled = currentTab != MainTab.INICIO) {
+        viewModel.selectTab(MainTab.INICIO)
     }
 
     val pendingExchangesCount = myExchanges.count { it.status == "PROPOSED" && it.targetOwnerId == currentUser?.id }
@@ -182,8 +189,8 @@ fun TruekappApp(viewModel: TruekappViewModel) {
                 )
 
                 MainTab.PUBLICAR -> PublishScreen(
-                    onPublish = { title, desc, cat, cond, city, neigh, seek, isServ ->
-                        viewModel.publishListing(title, desc, cat, cond, city, neigh, seek, isServ)
+                    onPublish = { title, desc, cat, cond, city, neigh, seek, isServ, imgRes ->
+                        viewModel.publishListing(title, desc, cat, cond, city, neigh, seek, isServ, imgRes)
                     }
                 )
 
@@ -203,6 +210,7 @@ fun TruekappApp(viewModel: TruekappViewModel) {
                     currentUser = currentUser,
                     allUsers = allUsers,
                     myListings = myListings,
+                    myExchanges = myExchanges,
                     favoriteListings = listings.filter { it.isFavorite },
                     reviewsFlow = viewModel.getReviewsForUser(currentUser?.id ?: "user_camilo"),
                     onSwitchUser = { viewModel.switchUser(it) },
@@ -210,7 +218,9 @@ fun TruekappApp(viewModel: TruekappViewModel) {
                     onListingClick = { viewModel.openListingDetail(it) },
                     onProposeClick = { viewModel.startProposeTrueque(it) },
                     onToggleFavorite = { viewModel.toggleFavorite(it) },
-                    onOpenReportDialog = { viewModel.openReportDialog(it) }
+                    onOpenReportDialog = { viewModel.openReportDialog(it) },
+                    onOpenExchangesTab = { viewModel.selectTab(MainTab.INTERCAMBIOS) },
+                    onPublishClick = { viewModel.selectTab(MainTab.PUBLICAR) }
                 )
             }
         }
@@ -424,6 +434,20 @@ fun TruekappApp(viewModel: TruekappViewModel) {
             },
             onDismiss = {
                 viewModel.closeAuthDialog()
+            }
+        )
+    }
+
+    // 9. Proposal Sent Confirmation Dialog
+    lastSubmittedProposal?.let { submittedExch ->
+        ProposalSentConfirmationDialog(
+            exchange = submittedExch,
+            onGoToExchanges = {
+                viewModel.dismissProposalConfirmation()
+                viewModel.selectTab(MainTab.INTERCAMBIOS)
+            },
+            onContinueExploring = {
+                viewModel.dismissProposalConfirmation()
             }
         )
     }

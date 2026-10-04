@@ -213,7 +213,28 @@ fun ListingDetailSheet(
                     }
                 }
 
-                // What they want in exchange box
+                // What they offer & What they want in exchange boxes
+                Surface(
+                    shape = RoundedCornerShape(14.dp),
+                    color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.45f),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(14.dp)) {
+                        Text(
+                            text = "Qué ofrece ${listing.ownerName}:",
+                            style = MaterialTheme.typography.titleSmall.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = TruekappSecondary
+                            )
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "${listing.title} (${if (listing.isService) "Servicio" else listing.condition} • ${listing.category})",
+                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium)
+                        )
+                    }
+                }
+
                 Card(
                     shape = RoundedCornerShape(14.dp),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)),
@@ -257,7 +278,7 @@ fun ListingDetailSheet(
 
                 Spacer(modifier = Modifier.height(10.dp))
 
-                // Action: Proponer Trueque
+                // Action: Proponer Intercambio
                 Button(
                     onClick = onStartPropose,
                     shape = RoundedCornerShape(12.dp),
@@ -269,19 +290,78 @@ fun ListingDetailSheet(
                 ) {
                     Icon(imageVector = Icons.Default.Handshake, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Proponer trueque a ${listing.ownerName}")
+                    Text("Proponer intercambio")
                 }
             } else {
                 // --- Step 2: Proposing Swap Modal ---
                 Text(
-                    text = "Proponer Trueque",
+                    text = "Proponer Intercambio",
                     style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Black)
                 )
                 Text(
-                    text = "Elige uno de tus artículos o servicios para ofrecerle a ${listing.ownerName} a cambio de '${listing.title}'.",
+                    text = "Elige uno de tus artículos o servicios publicados para ofrecerle a ${listing.ownerName}.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+
+                // Visual summary of What I Offer vs What I Receive
+                Card(
+                    shape = RoundedCornerShape(14.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Column {
+                            Text(
+                                text = "Qué estás ofreciendo (Tu artículo/servicio):",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    color = TruekappPrimary
+                                )
+                            )
+                            Text(
+                                text = selectedOfferedListing?.title ?: "Selecciona una publicación abajo",
+                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
+                            )
+                        }
+
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.SwapHoriz,
+                                contentDescription = null,
+                                tint = TruekappSecondary,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Text(
+                                text = "A cambio de:",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    color = TruekappSecondary
+                                )
+                            )
+                        }
+
+                        Column {
+                            Text(
+                                text = "Qué quieres recibir (De ${listing.ownerName}):",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = listing.title,
+                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
+                            )
+                        }
+                    }
+                }
 
                 if (myListings.isEmpty()) {
                     Surface(
@@ -372,7 +452,7 @@ fun ListingDetailSheet(
                             .fillMaxWidth()
                             .testTag("proposal_pitch_message_input"),
                         label = { Text("Mensaje o propuesta inicial") },
-                        placeholder = { Text("Hola! Me interesa mucho tu publicación...") },
+                        placeholder = { Text("¡Hola! Me interesa mucho tu publicación...") },
                         shape = RoundedCornerShape(12.dp),
                         minLines = 3,
                         maxLines = 5
@@ -1030,7 +1110,7 @@ fun AuthDialog(
                             listOf(
                                 "Camilo" to "camilo.torres@ucundinamarca.edu.co",
                                 "Valentina" to "valentina.gomez@gmail.com",
-                                "Andrea" to "andrea.morales@ucundinamarca.edu.co"
+                                "Andrea" to "andrea.morales@gmail.com"
                             ).forEach { (name, email) ->
                                 OutlinedButton(
                                     onClick = {
@@ -1203,4 +1283,89 @@ fun AuthDialog(
             }
         }
     }
+}
+
+// --- 7. Proposal Sent Confirmation Dialog ---
+@Composable
+fun ProposalSentConfirmationDialog(
+    exchange: ExchangeEntity,
+    onGoToExchanges: () -> Unit,
+    onContinueExploring: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onContinueExploring,
+        title = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clip(CircleShape)
+                        .background(TruekappPrimary),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Check,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.width(10.dp))
+                Text(
+                    text = "¡Propuesta enviada!",
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                )
+            }
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(
+                    text = "Tu propuesta de intercambio fue enviada con éxito a ${exchange.targetOwnerName}.",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Text(
+                            text = "Ofreciste: ${exchange.proposerListingTitle}",
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = TruekappPrimary
+                            )
+                        )
+                        Text(
+                            text = "Por recibir: ${exchange.targetListingTitle}",
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = TruekappSecondary
+                            )
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = onGoToExchanges,
+                colors = ButtonDefaults.buttonColors(containerColor = TruekappPrimary),
+                modifier = Modifier.testTag("confirm_go_to_exchanges_button")
+            ) {
+                Text("Ver mis intercambios")
+            }
+        },
+        dismissButton = {
+            OutlinedButton(
+                onClick = onContinueExploring,
+                modifier = Modifier.testTag("confirm_continue_exploring_button")
+            ) {
+                Text("Seguir explorando")
+            }
+        }
+    )
 }
